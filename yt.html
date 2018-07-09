@@ -1,0 +1,247 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Haulio YouTube</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<link rel="stylesheet" href="https://youtube-replayer.mybluemix.net/css/style.css" />
+    <link rel="stylesheet" href="https://youtube-replayer.mybluemix.net/css/bootstrap.css" />
+    <script src="https://cdn.firebase.com/js/client/2.2.3/firebase.js"></script>
+</head>
+<body>
+	  <div class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <a href="../" class="navbar-brand">Haulio YouTube</a>
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar-main">
+          <ul class="nav navbar-nav">
+            <li>
+              <a href="https://community.haulio.io" target="_blank">Community</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top: 60px; color: white; background-color: #4285f4; box-shadow: 0 0 4px rgba(0,0,0,.14),0 4px 8px rgba(0,0,0,.28);">
+        <div class="container">
+          <h1 id="message" style="color: white;">Haulio YouTube</h1>
+            <p class='description'>From Haulio for Haulio.</p>
+        </div>
+    </div>
+	  <div class="container" style="margin-top: 40px;">
+      <div class="row">
+        <div class="col-sm-8">
+          <div class="form-group">
+            <div class="input-group">
+              <span class="input-group-addon">YouTube Video ID</span>
+              <input id="txtVideoURL" type="text" class="form-control" onkeydown="if (event.keyCode == 13) document.getElementById('btnViewVideo').click();">
+              <span class="input-group-btn">
+                <button id="btnViewVideo" class="btn btn-primary" type="button">Submit</button>
+              </span>
+            </div>
+          </div>
+          
+          <input id="hidVideoID" type="hidden" value="" />
+          <input id="hidNumberOfStoredVideos" type="hidden" value="0" />
+			    <input id="hidCounterOfStoredVideos" type="hidden" value="0" />
+          <input id="isJustDeletedVideo" type="hidden" value="0" />
+          
+          <div class="videoWrapper">
+            <div id="player"></div>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          
+            <div id="storedVideosList">
+                <div id="videoList" class="list-group">
+                  
+                </div>
+              </div>
+          
+        </div>
+      </div>
+    </div>
+    
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.js"></script>
+
+    <script type="text/javascript" src="https://youtube-replayer.mybluemix.net/js/slimScroll.min.js"></script>
+
+    <script src="https://www.youtube.com/player_api"></script>
+    
+    <script>
+        var songs = [];
+        var songDescriptions = [];
+        var songIndex = 0;
+    
+        $(function () {
+            
+            setInterval(sortPlaylistDisplay, 1000);
+    
+        });
+    
+        // create youtube player
+        var player;
+        function onYouTubePlayerAPIReady() {
+            fetchData(true, false);
+        }
+    
+        // autoplay video
+        function onPlayerReady(event) {
+            
+        }
+    
+        // when video ends
+        function onPlayerStateChange(event) {        
+            if(event.data === 0) {
+
+                fetchData(false, true);
+            }
+        }
+    
+        function fetchData(isInit, isIncrementSongIndex) {
+            $.getJSON('https://haulio-songs.firebaseio.com/haulioSongs.json', 
+            function(data) {
+                songs = [];
+                songDescriptions = [];
+                
+                $.each(data, function( index, value ) {
+                    songs.push(value.videoId);
+                });
+    
+                if (isInit) {
+                    player = new YT.Player('player', {
+                        height: '390',
+                        width: '640',
+                        videoId: songs[songIndex],
+                        events: {
+                            'onReady': onPlayerReady,
+                            'onStateChange': onPlayerStateChange
+                        },
+                        autoplay: 1
+                    });
+
+                    songIndex++;
+                } else if (isIncrementSongIndex) {
+                    if (songIndex < songs.length) {
+                        player.loadVideoById(songs[songIndex]);
+                        player.playVideo();
+                        songIndex++;
+                    }
+                }
+    
+                populateVideoList();
+            });
+        }
+    
+        $('#btnViewVideo').on('click', function(event){
+            event.preventDefault();
+
+            var haulioSongs = new Firebase("https://haulio-songs.firebaseio.com/haulioSongs");
+
+            var videoId = $('#txtVideoURL').val();
+            
+            // push new data onto firebase database
+            newNode = haulioSongs.push({ 
+                "videoId": videoId
+            });
+
+            setTimeout(function(){ fetchData(false, false); }, 3000);
+            
+            
+        });
+
+        $('#videoList').html('<span class="list-group-item active">My RePlayer Videos</span>');
+		    
+        function populateVideoList(){
+            for (var i = 0; i < songs.length; i++) {
+                if (songs[i]) {
+                    $.getJSON('https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=' + 
+                        songs[i] + '&key=AIzaSyD2phoI-AKDI26thimy-FYe9EISDFScIu0',
+                        function () { } )
+                            .success(
+                                function (data) {
+                                    var videoInfoItem = data.items[0];
+                                    var videoID = videoInfoItem.id;
+                                    var videoTitle = ((videoInfoItem.snippet.title).replace(/"/g, '&quot;')).replace(/'/g, '&apos;');
+                                    var videoDuration = processVideoDuration(videoInfoItem.contentDetails.duration);
+                                    
+                                    var resultList = "";
+                                    resultList += "<a href='javascript:;' class='list-group-item' onclick='watchVideoGeneral(\"" + videoID + "\");'>";
+                                    resultList += "<table><tr><td style='width: 94px;'><img src='" + videoInfoItem.snippet.thumbnails.default.url + "' width='90px' title='" + videoTitle + "' alt='" + videoTitle + "'></td>";
+                                    resultList += "<td valign='top'>";
+                                    resultList += "<span style='font-weight: bold;'>" + ( videoTitle.length <= 20 ? videoTitle : videoTitle.substring(0, 20) + "..." ) + "</span>";
+                                    resultList += "<br />" + videoDuration + "<br /><a href='javascript:;' onclick='$(\"#isJustDeletedVideo\").val(\"1\"); if(confirm(\"Are you sure you want to remove this video from the list?\")) { deleteVideo(\"" + videoID + "\"); }'>(Remove)</a>";
+                                    resultList += "</td></tr></table>";
+                                    resultList += "</a>";
+
+                                    songDescriptions[videoInfoItem.id] = resultList;
+                                })
+                            .error(
+                            );
+                                
+                }
+            }
+        }
+            
+        function processVideoDuration(input) {
+            input = input.replace("PT", "");
+            
+            var hour = 0;
+            var minute = 0;
+            var second = 0;
+            
+            if (input.indexOf("H") > 0) {
+                hour = parseInt(input.split("H")[0]);		
+                
+                input = input.split("H")[1];
+            }
+            
+            if (input.indexOf("M") > 0) {
+                minute = parseInt(input.split("M")[0]);
+                    
+                input = input.split("M")[1];	
+            }
+            
+            if (input.indexOf("S") > 0) {
+                second = parseInt(input.split("S")[0]);
+            }
+            
+            var duration = "";
+            
+            if (hour > 0) {
+                duration = (hour > 9 ? "" : "0") + hour + ":";
+            }
+            
+            duration += (minute > 9 ? "" : "0") + minute + ":";
+            duration += (second > 9 ? "" : "0") + second;
+            
+            return duration;
+        }
+
+        function sortPlaylistDisplay() {
+            $('#videoList').html('');
+
+            for (var i = 0; i < songs.length; i++) {
+                if (songDescriptions[songs[i]] !== null && songDescriptions[songs[i]] !== '') {
+                    $('#videoList').html($('#videoList').html() + songDescriptions[songs[i]]);
+                }
+            }
+
+            $('#storedVideosList').slimScroll({
+                height: '500px',
+                size: '8px',
+                alwaysVisible: true,
+                railVisible: true
+            });
+        }
+    </script>
+</body>
+</html>
