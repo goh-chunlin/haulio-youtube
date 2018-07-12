@@ -36,6 +36,9 @@
     </div>
 	  <div class="container" style="margin-top: 40px;">
       <div class="row">
+		<div class="col-md-12">
+			<div class="alert alert-success" id="successMessage" style="display:none">Your video added successfully!</div>
+		</div>
         <div class="col-sm-8">
           <div class="form-group">
             <div class="input-group">
@@ -80,11 +83,10 @@
         var songs = [];
         var songDescriptions = [];
         var songIndex = 0;
-    
+		
         $(function () {
             
             setInterval(sortPlaylistDisplay, 1000);
-    
         });
     
         // create youtube player
@@ -101,10 +103,45 @@
         // when video ends
         function onPlayerStateChange(event) {        
             if(event.data === 0) {
-
                 fetchData(false, true);
             }
         }
+		
+		function stopVideo() {
+			player.stopVideo();
+		}
+		
+		function watchVideoGeneral(videoId) {
+			player.loadVideoById(videoId);
+            player.playVideo();
+		}
+		
+		var getRandom = function(min, max) {
+		  return Math.random() * (max - min) + min;
+		};
+		
+		function deleteVideo(videoId) {
+			var haulioSongs = new Firebase("https://haulio-songs.firebaseio.com/haulioSongs");
+			
+			$.getJSON('https://haulio-songs.firebaseio.com/haulioSongs.json', 
+            function(data) {
+                $.each(data, function( index, value ) {
+                    if (value.videoId == videoId)
+					{
+						haulioSongs.child(index).remove();
+						
+						// There is delay in removing/updating json data. We need to wait a while first
+						setInterval(fetchData(false, false), 3000);
+						setInterval(sortPlaylistDisplay, 4000);
+						
+						$("#successMessage").html("Your video removed successfully!");
+						$("#successMessage").fadeTo(2000, 500).slideUp(500, function(){
+							$("#successMessage").slideUp(500);
+						});
+					}
+                });
+            });
+		}
     
         function fetchData(isInit, isIncrementSongIndex) {
             $.getJSON('https://haulio-songs.firebaseio.com/haulioSongs.json', 
@@ -131,8 +168,7 @@
                     songIndex++;
                 } else if (isIncrementSongIndex) {
                     if (songIndex < songs.length) {
-                        player.loadVideoById(songs[songIndex]);
-                        player.playVideo();
+						watchVideoGeneral(songs[songIndex]);
                         songIndex++;
                     }
                 }
@@ -153,6 +189,12 @@
                 "videoId": videoId
             });
 
+			$("#successMessage").html("Your video added successfully!");
+			$("#successMessage").fadeTo(2000, 500).slideUp(500, function(){
+				$("#successMessage").slideUp(500);
+			});
+			$("#txtVideoURL").val("");
+			
             setTimeout(function(){ fetchData(false, false); }, 3000);
             
             
