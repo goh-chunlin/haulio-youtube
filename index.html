@@ -19,7 +19,7 @@
   <link href="https://haulioyoutube.blob.core.windows.net/static-resource/landing-page.css" rel="stylesheet">
 
   <!-- Custom styles for this template -->
-  <link rel="stylesheet" href="https://youtube-replayer.mybluemix.net/css/style.css" />
+  <link href="https://youtube-replayer.mybluemix.net/css/style.css" />
   <script src="https://cdn.firebase.com/js/client/2.2.3/firebase.js"></script>
 
 </head>
@@ -30,7 +30,12 @@
   <nav class="navbar navbar-light bg-light static-top">
     <div class="container">
       <a class="navbar-brand" href="/">Haulio YouTube</a>
-      <a class="btn btn-primary" href="javascript:;" onclick="$('#modalPlaylist').modal('show');">Playlist</a>
+
+      <div class="pull-right">
+          <a class="btn btn-success" href="javascript:;" onclick="$('#modalVideo').modal('show');">Video</a>
+          <a class="btn btn-primary" href="javascript:;" onclick="$('#modalPlaylist').modal('show');">Playlist</a>
+      </div>
+      
     </div>
   </nav>
 
@@ -105,14 +110,29 @@
       </div>
     </div>
   </footer>
+  
+  <div id="modalVideo" class="modal" style="color: black;">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Now Playing...</h4>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+          <input id="hidVideoID" type="hidden" value="" />
+          <input id="hidNumberOfStoredVideos" type="hidden" value="0" />
+          <input id="hidCounterOfStoredVideos" type="hidden" value="0" />
+          <input id="isJustDeletedVideo" type="hidden" value="0" />
 
-  <input id="hidVideoID" type="hidden" value="" />
-  <input id="hidNumberOfStoredVideos" type="hidden" value="0" />
-  <input id="hidCounterOfStoredVideos" type="hidden" value="0" />
-  <input id="isJustDeletedVideo" type="hidden" value="0" />
+          <div class="videoWrapper">
+            <div id="player"></div>
+          </div>
+        </div>
 
-  <div class="videoWrapper" style="display: none;">
-    <div id="player"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div id="modalPlaylist" class="modal" style="color: black;">
@@ -274,10 +294,6 @@
 
           populateVideoList();
         });
-
-        if (songTitles[videoId] != null) {
-          $('#playing-now-title').html('Now Playing<br />' + songTitles[videoId]);
-        }
       
     }
 
@@ -350,6 +366,10 @@
       for (var i = 0; i < songs.length; i++) {
         if (songDescriptions[songs[i]] !== null && songDescriptions[songs[i]] !== '') {
           $('#videoList').html($('#videoList').html() + songDescriptions[songs[i]]);
+
+          if (i == songIndex && songTitles[songs[songIndex - 1]] != null) {
+            $('#playing-now-title').html('Now Playing<br />' + songTitles[songs[songIndex - 1]]);
+          }
         }
       }
 
