@@ -209,7 +209,6 @@
     function watchVideoGeneral(videoId) {
       player.loadVideoById(videoId);
       player.playVideo();
-      $('#playing-now-title').html('Now Playing<br />' + songTitles[videoId]);
 
       songIndex = songs.indexOf(videoId) + 1;
 
@@ -275,6 +274,11 @@
 
           populateVideoList();
         });
+
+        if (songTitles[videoId] != null) {
+          $('#playing-now-title').html('Now Playing<br />' + songTitles[videoId]);
+        }
+      
     }
 
     function populateVideoList() {
