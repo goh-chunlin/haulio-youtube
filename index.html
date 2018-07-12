@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>Haulio YouTube</title>
+
+  <!-- Bootstrap core CSS -->
+  <link href="https://haulioyoutube.blob.core.windows.net/static-resource/bootstrap.min.css" rel="stylesheet">
+
+  <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+  <!-- Custom styles for this template -->
+  <link href="https://haulioyoutube.blob.core.windows.net/static-resource/landing-page.css" rel="stylesheet">
+
+  <!-- Custom styles for this template -->
+  <link rel="stylesheet" href="https://youtube-replayer.mybluemix.net/css/style.css" />
+  <script src="https://cdn.firebase.com/js/client/2.2.3/firebase.js"></script>
+
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-light bg-light static-top">
+    <div class="container">
+      <a class="navbar-brand" href="/">Haulio YouTube</a>
+      <a class="btn btn-primary" href="javascript:;" onclick="$('#modalPlaylist').modal('show');">Playlist</a>
+    </div>
+  </nav>
+
+  <!-- Masthead -->
+  <header class="masthead text-white text-center">
+    <div class="overlay"></div>
+    <div class="container">
+      <div class="row">
+        <div class="col-xl-9 mx-auto">
+          <h1 class="mb-5" id="playing-now-title">Welcome to Haulio YouTube</h1>
+        </div>
+        <div class="col-md-10 col-lg-8 col-xl-7 mx-auto">
+          <form>
+            <div class="form-row">
+              <div class="col-12 col-md-9 mb-2 mb-md-0">
+                <input id="txtVideoURL" type="text" class="form-control form-control-lg" placeholder="Enter YouTube video ID..." onkeydown="if (event.keyCode == 13) document.getElementById('btnViewVideo').click();"
+                />
+              </div>
+              <div class="col-12 col-md-3">
+                <button id="btnViewVideo" type="submit" class="btn btn-block btn-lg btn-primary">Add Playlist!</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Footer -->
+  <footer class="footer bg-light">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6 h-100 text-center text-lg-left my-auto">
+          <!-- <ul class="list-inline mb-2">
+              <li class="list-inline-item">
+                <a href="#">About</a>
+              </li>
+              <li class="list-inline-item">&sdot;</li>
+              <li class="list-inline-item">
+                <a href="#">Contact</a>
+              </li>
+              <li class="list-inline-item">&sdot;</li>
+              <li class="list-inline-item">
+                <a href="#">Terms of Use</a>
+              </li>
+              <li class="list-inline-item">&sdot;</li>
+              <li class="list-inline-item">
+                <a href="#">Privacy Policy</a>
+              </li>
+            </ul> -->
+          <p class="text-muted small mb-4 mb-lg-0">&copy; Haulio Tech 2018. All Rights Reserved.</p>
+        </div>
+        <div class="col-lg-6 h-100 text-center text-lg-right my-auto">
+          <!-- <ul class="list-inline mb-0">
+              <li class="list-inline-item mr-3">
+                <a href="#">
+                  <i class="fa fa-facebook fa-2x fa-fw"></i>
+                </a>
+              </li>
+              <li class="list-inline-item mr-3">
+                <a href="#">
+                  <i class="fa fa-twitter fa-2x fa-fw"></i>
+                </a>
+              </li>
+              <li class="list-inline-item">
+                <a href="#">
+                  <i class="fa fa-instagram fa-2x fa-fw"></i>
+                </a>
+              </li>
+            </ul> -->
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <input id="hidVideoID" type="hidden" value="" />
+  <input id="hidNumberOfStoredVideos" type="hidden" value="0" />
+  <input id="hidCounterOfStoredVideos" type="hidden" value="0" />
+  <input id="isJustDeletedVideo" type="hidden" value="0" />
+
+  <div class="videoWrapper" style="display: none;">
+    <div id="player"></div>
+  </div>
+
+  <div id="modalPlaylist" class="modal" style="color: black;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Playlist</h4>
+        </div>
+        <div class="modal-body">
+          <div id="storedVideosList">
+            <div id="videoList" class="list-group">
+
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script>
+  <script src="https://bootswatch.com/3/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+
+  <script type="text/javascript" src="https://youtube-replayer.mybluemix.net/js/slimScroll.min.js"></script>
+
+  <script src="https://www.youtube.com/player_api"></script>
+
+  <script>
+    var songs = [];
+    var songTitles = [];
+    var songDescriptions = [];
+    var songIndex = 0;
+
+    $(function () {
+
+      setInterval(sortPlaylistDisplay, 1000);
+
+      $('#button-delete').click(function (event) {
+        event.stopPropagation();
+      });
+
+      $('#btnViewVideo').on('click', function (event) {
+        event.preventDefault();
+
+        var haulioSongs = new Firebase("https://haulio-songs.firebaseio.com/haulioSongs");
+
+        var videoId = $('#txtVideoURL').val();
+
+        // push new data onto firebase database
+        newNode = haulioSongs.push({
+          "videoId": videoId
+        });
+
+        $("#successMessage").html("Your video added successfully!");
+        $("#successMessage").fadeTo(2000, 500).slideUp(500, function () {
+          $("#successMessage").slideUp(500);
+        });
+
+        $("#txtVideoURL").val("");
+
+        setTimeout(function () { fetchData(false, false); }, 3000);
+
+
+      });
+    });
+
+    // create youtube player
+    var player;
+    function onYouTubePlayerAPIReady() {
+      fetchData(true, false);
+    }
+
+    // autoplay video
+    function onPlayerReady(event) {
+
+    }
+
+    // when video ends
+    function onPlayerStateChange(event) {
+      if (event.data === 0) {
+        fetchData(false, true);
+      }
+    }
+
+    function stopVideo() {
+      player.stopVideo();
+    }
+
+    function watchVideoGeneral(videoId) {
+      player.loadVideoById(videoId);
+      player.playVideo();
+      $('#playing-now-title').html('Now Playing<br />' + songTitles[videoId]);
+
+      songIndex = songs.indexOf(videoId) + 1;
+
+      $('#modalPlaylist').modal('hide');
+    }
+
+    var getRandom = function (min, max) {
+      return Math.random() * (max - min) + min;
+    };
+
+    function deleteVideo(videoId) {
+      var haulioSongs = new Firebase("https://haulio-songs.firebaseio.com/haulioSongs");
+
+      $.getJSON('https://haulio-songs.firebaseio.com/haulioSongs.json',
+        function (data) {
+          $.each(data, function (index, value) {
+            if (value.videoId == videoId) {
+              haulioSongs.child(index).remove();
+
+              // There is delay in removing/updating json data. We need to wait a while first
+              setInterval(fetchData(false, false), 3000);
+              setInterval(sortPlaylistDisplay, 4000);
+
+              $("#successMessage").html("Your video removed successfully!");
+              $("#successMessage").fadeTo(2000, 500).slideUp(500, function () {
+                $("#successMessage").slideUp(500);
+              });
+            }
+          });
+        });
+    }
+
+    function fetchData(isInit, isIncrementSongIndex) {
+      $.getJSON('https://haulio-songs.firebaseio.com/haulioSongs.json',
+        function (data) {
+          songs = [];
+          songTitles = [];
+          songDescriptions = [];
+
+          $.each(data, function (index, value) {
+            songs.push(value.videoId);
+          });
+
+          if (isInit) {
+            player = new YT.Player('player', {
+              height: '390',
+              width: '640',
+              videoId: songs[songIndex],
+              events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange
+              },
+              autoplay: 1
+            });
+
+            songIndex++;
+          } else if (isIncrementSongIndex) {
+            if (songIndex < songs.length) {
+              watchVideoGeneral(songs[songIndex]);
+              songIndex++;
+            }
+          }
+
+          populateVideoList();
+        });
+    }
+
+    function populateVideoList() {
+      for (var i = 0; i < songs.length; i++) {
+        if (songs[i]) {
+          $.getJSON('https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=' +
+            songs[i] + '&key=AIzaSyD2phoI-AKDI26thimy-FYe9EISDFScIu0',
+            function (data) {
+              var videoInfoItem = data.items[0];
+              var videoID = videoInfoItem.id;
+              var videoTitle = ((videoInfoItem.snippet.title).replace(/"/g, '&quot;')).replace(/'/g, '&apos;');
+              var videoDuration = processVideoDuration(videoInfoItem.contentDetails.duration);
+
+              var resultList = "";
+              resultList += "<a href='javascript:;' class='list-group-item' onclick='watchVideoGeneral(\"" + videoID + "\");'>";
+              resultList += "<table><tr><td style='width: 94px;'><img src='" + videoInfoItem.snippet.thumbnails.default.url + "' width='90px' title='" + videoTitle + "' alt='" + videoTitle + "'></td>";
+              resultList += "<td valign='top'>";
+              resultList += "<span style='font-weight: bold;'>" + (videoTitle.length <= 20 ? videoTitle : videoTitle.substring(0, 20) + "...") + "</span>";
+              resultList += "<br />" + videoDuration + "<br /><a class='button-delete' href='javascript:;' onclick='$(\"#isJustDeletedVideo\").val(\"1\"); if(confirm(\"Are you sure you want to remove this video from the list?\")) { deleteVideo(\"" + videoID + "\"); }'>(Remove)</a>";
+              resultList += "</td></tr></table>";
+              resultList += "</a>";
+
+              songTitles[videoInfoItem.id] = videoTitle;
+              songDescriptions[videoInfoItem.id] = resultList;
+            });
+
+        }
+      }
+    }
+
+    function processVideoDuration(input) {
+      input = input.replace("PT", "");
+
+      var hour = 0;
+      var minute = 0;
+      var second = 0;
+
+      if (input.indexOf("H") > 0) {
+        hour = parseInt(input.split("H")[0]);
+
+        input = input.split("H")[1];
+      }
+
+      if (input.indexOf("M") > 0) {
+        minute = parseInt(input.split("M")[0]);
+
+        input = input.split("M")[1];
+      }
+
+      if (input.indexOf("S") > 0) {
+        second = parseInt(input.split("S")[0]);
+      }
+
+      var duration = "";
+
+      if (hour > 0) {
+        duration = (hour > 9 ? "" : "0") + hour + ":";
+      }
+
+      duration += (minute > 9 ? "" : "0") + minute + ":";
+      duration += (second > 9 ? "" : "0") + second;
+
+      return duration;
+    }
+
+    function sortPlaylistDisplay() {
+      $('#videoList').html('');
+
+      for (var i = 0; i < songs.length; i++) {
+        if (songDescriptions[songs[i]] !== null && songDescriptions[songs[i]] !== '') {
+          $('#videoList').html($('#videoList').html() + songDescriptions[songs[i]]);
+        }
+      }
+
+      $('#storedVideosList').slimScroll({
+        height: '500px',
+        size: '8px',
+        alwaysVisible: true,
+        railVisible: true
+      });
+    }
+  </script>
+
+</body>
+
+</html>
