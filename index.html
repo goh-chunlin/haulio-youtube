@@ -230,7 +230,7 @@
       player.loadVideoById(videoId);
       player.playVideo();
 
-      songIndex = songs.indexOf(videoId) + 1;
+      songIndex = songs.indexOf(videoId);
 
       $('#modalPlaylist').modal('hide');
     }
@@ -287,8 +287,8 @@
             songIndex++;
           } else if (isIncrementSongIndex) {
             if (songIndex < songs.length) {
-              watchVideoGeneral(songs[songIndex]);
               songIndex++;
+              watchVideoGeneral(songs[songIndex]);
             }
           }
 
@@ -367,8 +367,8 @@
         if (songDescriptions[songs[i]] !== null && songDescriptions[songs[i]] !== '') {
           $('#videoList').html($('#videoList').html() + songDescriptions[songs[i]]);
 
-          if (i == songIndex && songTitles[songs[songIndex - 1]] != null) {
-            $('#playing-now-title').html('Now Playing<br />' + songTitles[songs[songIndex - 1]]);
+          if (i == songIndex && songTitles[songs[songIndex]] != null) {
+            $('#playing-now-title').html('Now Playing<br />' + songTitles[songs[songIndex]]);
           }
         }
       }
