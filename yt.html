@@ -231,7 +231,7 @@
             var isVideoRecentlyPlayed = false;
 
             if (songs.length > 15) {
-                for(var i = playedSongs.length - 1; i >= playedSongs.length - 10; i--) {
+                for(var i = playedSongs.length - 1; i >= playedSongs.length - 10 && i >= 0; i--) {
                     if (playedSongs[i] == videoId) {
                         songIndex = getRandom(0, songs.length);
                         watchVideoGeneral(songs[songIndex]);
