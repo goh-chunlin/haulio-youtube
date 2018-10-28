@@ -51,8 +51,7 @@
                     <form>
                         <div class="form-row">
                             <div class="col-12 col-md-9 mb-2 mb-md-0">
-                                <input id="txtVideoURL" type="text" class="form-control form-control-lg" placeholder="Enter YouTube video ID..." onkeydown="if (event.keyCode == 13) document.getElementById('btnViewVideo').click();"
-                                />
+                                <input id="txtVideoURL" type="text" class="form-control form-control-lg" placeholder="Enter YouTube video ID..." onkeydown="if (event.keyCode == 13) document.getElementById('btnViewVideo').click();" />
                             </div>
                             <div class="col-12 col-md-3">
                                 <button id="btnViewVideo" type="submit" class="btn btn-block btn-lg btn-primary">Add Playlist!</button>
@@ -69,43 +68,9 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-6 h-100 text-center text-lg-left my-auto">
-                    <!-- <ul class="list-inline mb-2">
-              <li class="list-inline-item">
-                <a href="#">About</a>
-              </li>
-              <li class="list-inline-item">&sdot;</li>
-              <li class="list-inline-item">
-                <a href="#">Contact</a>
-              </li>
-              <li class="list-inline-item">&sdot;</li>
-              <li class="list-inline-item">
-                <a href="#">Terms of Use</a>
-              </li>
-              <li class="list-inline-item">&sdot;</li>
-              <li class="list-inline-item">
-                <a href="#">Privacy Policy</a>
-              </li>
-            </ul> -->
                     <p class="text-muted small mb-4 mb-lg-0">&copy; Haulio Tech 2018. All Rights Reserved.</p>
                 </div>
                 <div class="col-lg-6 h-100 text-center text-lg-right my-auto">
-                    <!-- <ul class="list-inline mb-0">
-              <li class="list-inline-item mr-3">
-                <a href="#">
-                  <i class="fa fa-facebook fa-2x fa-fw"></i>
-                </a>
-              </li>
-              <li class="list-inline-item mr-3">
-                <a href="#">
-                  <i class="fa fa-twitter fa-2x fa-fw"></i>
-                </a>
-              </li>
-              <li class="list-inline-item">
-                <a href="#">
-                  <i class="fa fa-instagram fa-2x fa-fw"></i>
-                </a>
-              </li>
-            </ul> -->
                 </div>
             </div>
         </div>
@@ -171,102 +136,74 @@
         var songDescriptions = [];
         var playedSongs = [];
         var songIndex = 0;
-
         $(function () {
-
             setInterval(sortPlaylistDisplay, 1000);
-
             $('#button-delete').click(function (event) {
                 event.stopPropagation();
             });
-
             $('#btnViewVideo').on('click', function (event) {
                 event.preventDefault();
-
                 var haulioSongs = new Firebase("https://haulio-songs.firebaseio.com/haulioSongs");
-
                 var videoId = $('#txtVideoURL').val();
-
                 // push new data onto firebase database
                 newNode = haulioSongs.push({
                     "videoId": videoId
                 });
-
                 $("#successMessage").html("Your video added successfully!");
                 $("#successMessage").fadeTo(2000, 500).slideUp(500, function () {
                     $("#successMessage").slideUp(500);
                 });
-
                 $("#txtVideoURL").val("");
-
                 setTimeout(function () { fetchData(false, false); }, 3000);
-
-
             });
         });
-
         // create youtube player
         var player;
         function onYouTubePlayerAPIReady() {
             fetchData(true, false);
         }
-
         // autoplay video
         function onPlayerReady(event) {
-
         }
-
         // when video ends
         function onPlayerStateChange(event) {
             if (event.data === 0) {
                 fetchData(false, true);
             }
         }
-
         function stopVideo() {
             player.stopVideo();
         }
-
         function watchVideoGeneral(videoId) {
             var isVideoRecentlyPlayed = false;
-
             if (songs.length > 15) {
                 for(var i = playedSongs.length - 1; i >= playedSongs.length - 10 && i >= 0; i--) {
                     if (playedSongs[i] == videoId) {
                         songIndex = getRandom(0, songs.length);
                         watchVideoGeneral(songs[songIndex]);
-
                         return;
                     }
                 }
             }
             playedSongs.push(videoId);
-
             player.loadVideoById(videoId);
             player.playVideo();
-
             songIndex = songs.indexOf(videoId);
-
             $('#modalPlaylist').modal('hide');
         }
-
         var getRandom = function (min, max) {
             return parseInt(Math.random() * (max - min) + min);
         };
-
         function deleteVideo(videoId) {
             var haulioSongs = new Firebase("https://haulio-songs.firebaseio.com/haulioSongs");
-
             $.getJSON('https://haulio-songs.firebaseio.com/haulioSongs.json',
                 function (data) {
                     $.each(data, function (index, value) {
                         if (value.videoId == videoId) {
                             haulioSongs.child(index).remove();
-
                             // There is delay in removing/updating json data. We need to wait a while first
                             setInterval(fetchData(false, false), 3000);
                             setInterval(sortPlaylistDisplay, 4000);
-
                             $("#successMessage").html("Your video removed successfully!");
                             $("#successMessage").fadeTo(2000, 500).slideUp(500, function () {
                                 $("#successMessage").slideUp(500);
@@ -275,18 +212,15 @@
                     });
                 });
         }
-
         function fetchData(isInit, isIncrementSongIndex) {
             $.getJSON('https://haulio-songs.firebaseio.com/haulioSongs.json',
                 function (data) {
                     songs = [];
                     songTitles = [];
                     songDescriptions = [];
-
                     $.each(data, function (index, value) {
                         songs.push(value.videoId);
                     });
-
                     if (isInit) {
                         player = new YT.Player('player', {
                             height: '390',
@@ -298,18 +232,14 @@
                             },
                             autoplay: 1
                         });
-
                         songIndex++;
                     } else if (isIncrementSongIndex) {
                         songIndex = getRandom(0, songs.length);
                         watchVideoGeneral(songs[songIndex]);
                     }
-
                     populateVideoList();
                 });
-
         }
-
         function populateVideoList() {
             for (var i = 0; i < songs.length; i++) {
                 if (songs[i]) {
@@ -320,7 +250,6 @@
                             var videoID = videoInfoItem.id;
                             var videoTitle = ((videoInfoItem.snippet.title).replace(/"/g, '&quot;')).replace(/'/g, '&apos;');
                             var videoDuration = processVideoDuration(videoInfoItem.contentDetails.duration);
-
                             var resultList = "";
                             resultList += "<a href='javascript:;' class='list-group-item' onclick='watchVideoGeneral(\"" + videoID + "\");'>";
                             resultList += "<table><tr><td style='width: 94px;'><img src='" + videoInfoItem.snippet.thumbnails.default.url + "' width='90px' title='" + videoTitle + "' alt='" + videoTitle + "'></td>";
@@ -329,63 +258,46 @@
                             resultList += "<br />" + videoDuration + "<br /><a class='button-delete' href='javascript:;' onclick='$(\"#isJustDeletedVideo\").val(\"1\"); if(confirm(\"Are you sure you want to remove this video from the list?\")) { deleteVideo(\"" + videoID + "\"); }'>(Remove)</a>";
                             resultList += "</td></tr></table>";
                             resultList += "</a>";
-
                             songTitles[videoInfoItem.id] = videoTitle;
                             songDescriptions[videoInfoItem.id] = resultList;
                         });
-
                 }
             }
         }
-
         function processVideoDuration(input) {
             input = input.replace("PT", "");
-
             var hour = 0;
             var minute = 0;
             var second = 0;
-
             if (input.indexOf("H") > 0) {
                 hour = parseInt(input.split("H")[0]);
-
                 input = input.split("H")[1];
             }
-
             if (input.indexOf("M") > 0) {
                 minute = parseInt(input.split("M")[0]);
-
                 input = input.split("M")[1];
             }
-
             if (input.indexOf("S") > 0) {
                 second = parseInt(input.split("S")[0]);
             }
-
             var duration = "";
-
             if (hour > 0) {
                 duration = (hour > 9 ? "" : "0") + hour + ":";
             }
-
             duration += (minute > 9 ? "" : "0") + minute + ":";
             duration += (second > 9 ? "" : "0") + second;
-
             return duration;
         }
-
         function sortPlaylistDisplay() {
             $('#videoList').html('');
-
             for (var i = 0; i < songs.length; i++) {
                 if (songDescriptions[songs[i]] !== null && songDescriptions[songs[i]] !== '') {
                     $('#videoList').html($('#videoList').html() + songDescriptions[songs[i]]);
-
                     if (i == songIndex && songTitles[songs[songIndex]] != null) {
                         $('#playing-now-title').html('Now Playing<br />' + songTitles[songs[songIndex]]);
                     }
                 }
             }
-
             $('#storedVideosList').slimScroll({
                 height: '500px',
                 size: '8px',
